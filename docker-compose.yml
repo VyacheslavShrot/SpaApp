@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+
+  mongo:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongodb_data:/data/db
+    env_file:
+      - .env
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-admin
+    restart: always
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
