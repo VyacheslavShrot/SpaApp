@@ -1,8 +1,10 @@
 import json
+from datetime import timedelta
 
 import bcrypt as bcrypt
 
 from user.models import User
+from utils.token import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
 
 
 class UserManager:
@@ -27,3 +29,10 @@ class UserManager:
             "home_page": user.home_page,
             "created_at": user.created_at.isoformat()
         }
+
+    @staticmethod
+    def login(username) -> str:
+        token_data: dict = {"sub": username}
+
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        return create_access_token(token_data, access_token_expires)
