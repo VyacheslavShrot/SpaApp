@@ -22,9 +22,17 @@ class UserRegister(View, UserManager):
     def post(self, request: HttpRequest) -> JsonResponse:
         try:
             data: json = json.loads(request.body)
-
-            username: str = data['username']
-            email: str = data['email']
+            try:
+                username: str = data['username']
+                email: str = data['email']
+                password: str = data['password']
+            except KeyError:
+                return JsonResponse(
+                    {
+                        "error": "Required params in body json: 'username', 'email', 'password'"
+                    }
+                )
+            home_page = data.get('home_page', '')
 
             if not username.isalnum():  # username Validity Check
                 return JsonResponse(
@@ -49,7 +57,7 @@ class UserRegister(View, UserManager):
                             }, status=500
                         )
                 except ObjectDoesNotExist:  # If there is no such user -> register user
-                    user_data: dict = self.register_user(data)
+                    user_data: dict = self.register_user(username, email, password, home_page)
                     return JsonResponse(
                         {
                             "success": True,
@@ -76,8 +84,15 @@ class UserLogin(View, UserManager):
         try:
             data: json = json.loads(request.body)
 
-            username: str = data['username']
-            password: str = data['password']
+            try:
+                username: str = data['username']
+                password: str = data['password']
+            except KeyError:
+                return JsonResponse(
+                    {
+                        "error": "Required params in body json: 'username', 'password'"
+                    }
+                )
 
             try:
                 user = User.objects.get(username=username)  # Check if there is such user
@@ -110,9 +125,9 @@ class UserLogin(View, UserManager):
                     }, status=500
                 )
         except Exception as e:
-            logger.error(f"An unexpected error occurred while creating a user | {e}")
+            logger.error(f"An unexpected error occurred while login user | {e}")
             return JsonResponse(
                 {
-                    "error": f"An unexpected error occurred while creating a user | {str(e)}"
+                    "error": f"An unexpected error occurred while login user | {str(e)}"
                 }, status=500
             )
