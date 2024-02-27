@@ -4,9 +4,19 @@ from io import BytesIO
 
 from captcha.image import ImageCaptcha
 from django.core.cache import cache
+from django.db.models import QuerySet
+from django.forms import model_to_dict
 
 from core.models import Comment, Messages
 from user.models import User
+
+_COMMENT_FIELDS = [
+    'id',
+    'captcha',
+    'text',
+    'created_at',
+    'user'
+]
 
 
 class CoreManager:
@@ -34,6 +44,62 @@ class CoreManager:
     @staticmethod
     def get_comment(search_field: str, value) -> Comment:
         return Comment.objects.get(**{search_field: value})
+
+    @staticmethod
+    def format_comments(comments: QuerySet) -> list:
+        comments_list = []
+
+        for comment in comments:
+            comment_dict = model_to_dict(comment, fields=_COMMENT_FIELDS)
+            comment_dict['created_at'] = comment.created_at.strftime('%Y-%m-%d %H:%M:%S')
+
+            comments_list.append(comment_dict)
+
+        return comments_list
+
+    @staticmethod
+    def sort_comments(comments: list, reverse: bool) -> list:
+        return sorted(comments, key=lambda x: x['created_at'], reverse=reverse)
+
+    def get_all_comments(self) -> list:
+        comments: QuerySet = Comment.objects.all()
+        return self.format_comments(comments)
+
+    def get_filter_comments(
+            self,
+            username: str = None,
+            email: str = None,
+            date: str = None
+    ) -> list:
+        filtered_comments = []
+
+        if username:
+            user_by_username: User = self.get_user("username", username)
+            comments: QuerySet = Comment.objects.filter(user=user_by_username)
+
+            for comment in self.format_comments(comments):
+                filtered_comments.append(comment)
+
+        if email:
+            user_by_email: User = self.get_user("email", email)
+            comments: QuerySet = Comment.objects.filter(user=user_by_email)
+
+            for comment in self.format_comments(comments):
+                filtered_comments.append(comment)
+
+        if date:
+            if date == "new":
+                filtered_comments = (
+                    self.sort_comments(filtered_comments, True) if username or email else
+                    self.sort_comments(self.get_all_comments(), True)
+                )
+            elif date == "old":
+                filtered_comments = (
+                    self.sort_comments(filtered_comments, False) if username or email else
+                    self.sort_comments(self.get_all_comments(), False)
+                )
+
+        return filtered_comments if username or email or date else self.get_all_comments()
 
     @staticmethod
     def create_message(message: str, current_user: User, comment: Comment) -> Messages:

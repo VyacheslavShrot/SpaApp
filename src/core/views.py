@@ -2,6 +2,7 @@ import json
 from io import BytesIO
 
 from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse, HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -41,6 +42,54 @@ class CommentRoom(CsrfExemptMixin, View):
 
 
 class CommentView(CsrfExemptMixin, View, CoreManager):
+
+    @check_login
+    def get(self, request: HttpRequest, username: str) -> JsonResponse:
+        try:
+            username_filter = request.GET.get('username', None)
+            email_filter = request.GET.get('email', None)
+            date_filter = request.GET.get('date', None)
+
+            if date_filter:
+                if date_filter not in ["new", "old"]:
+                    return JsonResponse(
+                        {
+                            "error": "'new' or 'old' should be in this parameter"
+                        }
+                    )
+
+            try:
+                if username_filter and email_filter:
+                    if self.get_user("username", username_filter) == self.get_user("email", email_filter):
+                        return JsonResponse(
+                            {
+                                "error": "'email' and 'username' refer to the same user"
+                            }
+                        )
+
+                comments = self.get_filter_comments(
+                    username_filter,
+                    email_filter,
+                    date_filter
+                )
+            except ObjectDoesNotExist:
+                return JsonResponse(
+                    {
+                        "error": "There is no such comments with such filters"
+                    }
+                )
+            return JsonResponse(
+                {
+                    "comments": comments
+                }
+            )
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while get comments | {e}")
+            return JsonResponse(
+                {
+                    "error": f"An unexpected error occurred while get comments | {str(e)}"
+                }, status=500
+            )
 
     @check_login
     def post(self, request: HttpRequest, username: str) -> JsonResponse:
