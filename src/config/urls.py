@@ -15,10 +15,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+
+from core import consumers
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/', include('user.urls')),
     path('comment/', include('core.urls')),
+]
+
+websocket_urlpatterns = [
+    re_path(r"ws/chat/(?P<comment_id>\w+)/$", consumers.CommentConsumer.as_asgi()),
 ]

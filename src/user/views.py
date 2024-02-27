@@ -3,21 +3,15 @@ import json
 import bcrypt
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse, HttpRequest
-from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 
 from user.manager import UserManager
 from user.models import User
 from utils.logger import logger
+from utils.mixin import CsrfExemptMixin
 
 
-class UserRegister(View, UserManager):
-
-    # todo - Need to DELETE in PROD version and pass csrf token from frontend
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+class UserRegister(CsrfExemptMixin, View, UserManager):
 
     def post(self, request: HttpRequest) -> JsonResponse:
         try:
@@ -73,12 +67,7 @@ class UserRegister(View, UserManager):
             )
 
 
-class UserLogin(View, UserManager):
-
-    # todo - Need to DELETE in PROD version and pass csrf token from frontend
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+class UserLogin(CsrfExemptMixin, View, UserManager):
 
     def post(self, request: HttpRequest) -> JsonResponse:
         try:

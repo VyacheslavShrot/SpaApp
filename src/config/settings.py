@@ -31,14 +31,15 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'core',
+    'user',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core',
-    'user',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +57,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -71,14 +72,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# ASGI
+ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 load_env(BASE_DIR)
-
-username = os.environ.get("MONGO_INITDB_ROOT_USERNAME")
-password = os.environ.get("MONGO_INITDB_ROOT_PASSWORD")
-auth_source = os.environ.get("MONGO_DB_AUTH_SOURCE")
 
 DATABASES = {
     'default': {
@@ -87,9 +96,9 @@ DATABASES = {
         'ENFORCE_SCHEMA': False,
         'CLIENT': {
             'host': 'mongodb://localhost:27017/',
-            'username': username,
-            'password': password,
-            'authSource': auth_source,
+            'username': os.environ.get("MONGO_INITDB_ROOT_USERNAME"),
+            'password': os.environ.get("MONGO_INITDB_ROOT_PASSWORD"),
+            'authSource': os.environ.get("MONGO_DB_AUTH_SOURCE"),
             'authMechanism': 'SCRAM-SHA-1',
         }
     }

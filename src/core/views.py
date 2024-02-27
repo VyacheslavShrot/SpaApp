@@ -3,23 +3,16 @@ from io import BytesIO
 
 from django.core.cache import cache
 from django.http import JsonResponse, HttpRequest, HttpResponse
-from django.utils.decorators import method_decorator
+from django.shortcuts import render
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 
-from core.manager import CaptchaManager
-from core.models import Comment
-from user.models import User
+from core.manager import CaptchaManager, CoreManager
 from utils.logger import logger
+from utils.mixin import CsrfExemptMixin
 from utils.token import check_login
 
 
-class CaptchaView(View, CaptchaManager):
-
-    # todo - Need to DELETE in PROD version and pass csrf token from frontend
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+class CaptchaView(CsrfExemptMixin, View, CaptchaManager):
 
     @check_login
     def post(self, request: HttpRequest, username: str) -> HttpResponse:
@@ -39,20 +32,22 @@ class CaptchaView(View, CaptchaManager):
             )
 
 
-class CommentView(View):
+class CommentRoom(CsrfExemptMixin, View):
 
-    # todo - Need to DELETE in PROD version and pass csrf token from frontend
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+    @check_login
+    def get(self, request: HttpRequest, username: str, comment_id: str):
+        cache.set('username', username, 7200)
+        return render(request, "room.html", {"comment_id": comment_id})
+
+
+class CommentView(CsrfExemptMixin, View, CoreManager):
 
     @check_login
     def post(self, request: HttpRequest, username: str) -> JsonResponse:
         try:
             data: json = json.loads(request.body)
             try:
-                text: str = data['text']
-                user_input_captcha: str = data['captcha_text']
+                body: dict = self.get_body(data, 'text', 'captcha_text')
             except KeyError:
                 return JsonResponse(
                     {
@@ -67,20 +62,15 @@ class CommentView(View):
                         "error": "There is no generated captcha"
                     }, status=500
                 )
-            if not captcha_text.lower() == user_input_captcha.lower():
+            if not captcha_text.lower() == body.get('captcha_text').lower():
                 return JsonResponse(
                     {
                         "error": "Entered text is not equal to captcha text"
                     }, status=500
                 )
 
-            user = User.objects.get(username=username)
-
-            comment = Comment.objects.create(
-                captcha=True,
-                text=text,
-                user=user
-            )
+            user = self.get_user('username', username)
+            comment = self.create_comment(body.get('text'), user)
 
             return JsonResponse(
                 {

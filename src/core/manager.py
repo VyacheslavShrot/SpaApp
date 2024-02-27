@@ -1,8 +1,47 @@
+import json
 import random
 from io import BytesIO
 
 from captcha.image import ImageCaptcha
 from django.core.cache import cache
+
+from core.models import Comment, Messages
+from user.models import User
+
+
+class CoreManager:
+
+    @staticmethod
+    def get_body(data: json, *args: str) -> dict:
+        result = {}
+        for key in args:
+            result[key] = data[key]
+
+        return result
+
+    @staticmethod
+    def get_user(search_field: str, value) -> User:
+        return User.objects.get(**{search_field: value})
+
+    @staticmethod
+    def create_comment(text: str, user: User) -> Comment:
+        return Comment.objects.create(
+            captcha=True,
+            text=text,
+            user=user
+        )
+
+    @staticmethod
+    def get_comment(search_field: str, value) -> Comment:
+        return Comment.objects.get(**{search_field: value})
+
+    @staticmethod
+    def create_message(message: str, current_user: User, comment: Comment) -> Messages:
+        return Messages.objects.create(
+            message=message,
+            user=current_user,
+            comment=comment
+        )
 
 
 class CaptchaManager:
