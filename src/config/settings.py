@@ -12,8 +12,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 
-from utils.env import load_env
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,7 +24,7 @@ SECRET_KEY = 'django-insecure-qh3j3f+!+n_*^(4=qb^-bilc^pbva0#728=9a58-_p+hoq$a9w
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 # Application definition
 
@@ -79,7 +77,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [("redis", 6379)],
         },
     },
 }
@@ -87,7 +85,19 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-load_env(BASE_DIR)
+
+def load_env(base_dir=BASE_DIR):
+    _env_path = os.path.join(base_dir, '.env')
+
+    with open(_env_path, 'r') as file:
+        for line in file:
+            if '=' in line:
+                key, value = line.strip().split('=')
+
+                os.environ[key] = value
+
+
+load_env()
 
 DATABASES = {
     'default': {
@@ -95,7 +105,7 @@ DATABASES = {
         'NAME': 'spa',
         'ENFORCE_SCHEMA': False,
         'CLIENT': {
-            'host': 'mongodb://localhost:27017/',
+            'host': 'mongodb://mongodb:27017/',
             'username': os.environ.get("MONGO_INITDB_ROOT_USERNAME"),
             'password': os.environ.get("MONGO_INITDB_ROOT_PASSWORD"),
             'authSource': os.environ.get("MONGO_DB_AUTH_SOURCE"),
@@ -144,3 +154,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 APPEND_SLASH = False
+
+"""
+                FOR CELERY
+"""
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'

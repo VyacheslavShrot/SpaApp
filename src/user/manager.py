@@ -1,11 +1,9 @@
-import json
-from datetime import timedelta
-
 import bcrypt as bcrypt
+from celery.result import AsyncResult
 from django.core.cache import cache
 
 from user.models import User
-from utils.token import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+from utils.token import create_access_token
 
 
 class UserManager:
@@ -41,8 +39,8 @@ class UserManager:
     def login(self, username) -> str:
         token_data: dict = {"sub": username}
 
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        token = create_access_token(token_data, access_token_expires)
+        token_task: AsyncResult = create_access_token.delay(token_data)
+        token: str = token_task.get()
 
         self.token_save_to_cache(token)
 

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any
 
+from celery import shared_task
 from django.core.cache import cache
 from django.http import HttpRequest, JsonResponse
 from jose import jwt, JWTError
@@ -12,10 +13,13 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 
-def create_access_token(data: dict, expires_delta: timedelta) -> str:
+@shared_task
+def create_access_token(data: dict) -> str:
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.utcnow() + access_token_expires
     to_encode.update({"exp": expire})
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

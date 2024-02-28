@@ -2,7 +2,9 @@ import collections
 import json
 
 from asgiref.sync import async_to_sync
+from celery import shared_task
 from channels.generic.websocket import WebsocketConsumer
+from channels.layers import get_channel_layer
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -12,7 +14,38 @@ from user.models import User
 from utils.logger import logger
 
 
+@shared_task
+def create_message(message: str, username: str, comment_id: str) -> None:
+    comment: Comment = Comment.objects.get(id=comment_id)
+    current_user: User = User.objects.get(username=username)
+
+    Messages.objects.create(
+        message=message,
+        user=current_user,
+        comment=comment
+    )
+
+
+@shared_task
+def send_chat_messages(comment_id: str) -> None:
+    messages: collections.Iterable = Messages.objects.filter(comment=comment_id)
+    channel_layer = get_channel_layer()
+
+    for message in messages:
+        message: Messages
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{comment_id}",
+            {"type": "chat_message", "message": message.message}
+        )
+
+
 class CommentConsumer(WebsocketConsumer, CoreManager):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.username = None
+        self.room_group_name = None
+        self.comment_id = None
 
     def connect(self):
         try:
@@ -29,10 +62,7 @@ class CommentConsumer(WebsocketConsumer, CoreManager):
                 comment: Comment = self.get_comment("id", self.comment_id)
                 self.send(text_data=json.dumps({"message": comment.text}))
 
-                messages: collections.Iterable = Messages.objects.filter(comment=self.comment_id)
-                for message in messages:
-                    message: Messages
-                    self.send(text_data=json.dumps({"message": message.message}))
+                send_chat_messages.delay(self.comment_id)
 
             except ObjectDoesNotExist:
                 self.send(text_data=json.dumps({"message": f"There is no such comment with this id {self.comment_id}"}))
@@ -55,11 +85,7 @@ class CommentConsumer(WebsocketConsumer, CoreManager):
             body: dict = self.get_body(data, 'message')
 
             message = body.get('message')
-
-            comment: Comment = self.get_comment("id", self.comment_id)
-            current_user: User = self.get_user('username', self.username)
-
-            self.create_message(message, current_user, comment)
+            create_message.delay(message, self.username, self.comment_id)
 
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name, {"type": "chat_message", "message": message}

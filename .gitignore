@@ -29,6 +29,9 @@ MANIFEST
 # Idea
 .idea
 
+# RabbitMQ Data
+rabbitmq_data
+
 # Mongo Data
 mongodb_data
 
@@ -126,7 +129,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+src/.env
 .venv
 env/
 venv/

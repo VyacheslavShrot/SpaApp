@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.db.models import QuerySet
 from django.forms import model_to_dict
 
-from core.models import Comment, Messages
+from core.models import Comment
 from user.models import User
 
 _COMMENT_FIELDS = [
@@ -101,14 +101,6 @@ class CoreManager:
 
         return filtered_comments if username or email or date else self.get_all_comments()
 
-    @staticmethod
-    def create_message(message: str, current_user: User, comment: Comment) -> Messages:
-        return Messages.objects.create(
-            message=message,
-            user=current_user,
-            comment=comment
-        )
-
 
 class CaptchaManager:
 
@@ -119,8 +111,7 @@ class CaptchaManager:
 
     @staticmethod
     def captcha_text_save_to_cache(captcha_text: str) -> None:
-        #  todo - Set captcha_text to save
-        cache.set(f'captcha_text', 'ABC', 200)
+        cache.set(f'captcha_text', captcha_text, 200)
 
     def create_captcha(self) -> BytesIO:
         captcha_text = self.generate_captcha_text()
