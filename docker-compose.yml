@@ -3,20 +3,15 @@ version: '3'
 services:
 
   backend:
-    build: ./
-    command:
-      - ./commands/start_server.sh
+    image: vyacheslavshrot/spa_app_backend
     restart: on-failure
     container_name: backend
-    volumes:
-      - ./src:/spa
-      - ./src/commands:/spa/commands
     ports:
       - "8000:8000"
     depends_on:
       - mongo
     env_file:
-      - src/.env
+      - .env
 
   mongo:
     image: mongo
@@ -27,7 +22,7 @@ services:
     volumes:
       - ./mongodb_data:/data/db
     env_file:
-      - src/.env
+      - .env
 
   mongo-express:
     image: mongo-express
@@ -36,7 +31,7 @@ services:
     ports:
       - "8081:8081"
     env_file:
-      - src/.env
+      - .env
 
   redis:
     image: redis:5
@@ -44,17 +39,14 @@ services:
       - "6379:6379"
 
   celery:
-    build: ./
-    command:
-      - ./commands/start_celery.sh
+    image: vyacheslavshrot/spa_app_celery
     restart: always
     container_name: celery
-    volumes:
-      - ./src:/spa
-      - ./src/commands:/spa/commands
     depends_on:
       - rabbitmq
       - backend
+    env_file:
+      - .env
 
   rabbitmq:
     image: rabbitmq:3-management

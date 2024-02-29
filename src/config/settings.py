@@ -85,20 +85,6 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-
-def load_env(base_dir=BASE_DIR):
-    _env_path = os.path.join(base_dir, '.env')
-
-    with open(_env_path, 'r') as file:
-        for line in file:
-            if '=' in line:
-                key, value = line.strip().split('=')
-
-                os.environ[key] = value
-
-
-load_env()
-
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
