@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+
+  backend:
+    image: vyacheslavshrot/spa_app_backend
+    restart: on-failure
+    container_name: backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    env_file:
+      - .env
+
+  mongo:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongodb_data:/data/db
+    env_file:
+      - .env
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-admin
+    restart: always
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+
+  redis:
+    image: redis:5
+    ports:
+      - "6379:6379"
+
+  celery:
+    image: vyacheslavshrot/spa_app_celery
+    restart: always
+    container_name: celery
+    depends_on:
+      - rabbitmq
+      - backend
+    env_file:
+      - .env
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./rabbitmq_data:/var/lib/rabbitmq
+    container_name: rabbitmq
+    hostname: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_VHOST=/
