@@ -30,8 +30,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t vyacheslavshrot/spa_app_backend:latest .
-          docker build -t vyacheslavshrot/spa_app_celery:latest .
+          docker build -t vyacheslavshrot/spa_app_backend:latest -f DockerfileBackend .
+          docker build -t vyacheslavshrot/spa_app_celery:latest -f DockerfileCelery .
 
       - name: Push Docker image to Docker Hub
         run: |
