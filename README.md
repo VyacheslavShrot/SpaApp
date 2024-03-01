@@ -1,4 +1,4 @@
-# Messenger [![CI/CD](https://github.com/VyacheslavShrot/SpaApp/actions/workflows/cd.yml/badge.svg)](https://github.com/VyacheslavShrot/SpaApp/actions/workflows/cd.yml)  <br>
+# SpaApp [![CI/CD](https://github.com/VyacheslavShrot/SpaApp/actions/workflows/cd.yml/badge.svg)](https://github.com/VyacheslavShrot/SpaApp/actions/workflows/cd.yml)  <br>
 
 - Backend Service - ![Pulls](https://img.shields.io/docker/pulls/vyacheslavshrot/spa_app_backend)<br>
 - Celery Service - ![Pulls](https://img.shields.io/docker/pulls/vyacheslavshrot/spa_app_celery)<br><br>
